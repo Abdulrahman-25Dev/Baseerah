@@ -73,6 +73,34 @@ export default function BaseerahPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // دالة مشاركة الحديث 
+  const handleShare = async () => {
+  if (!hadith) return;
+  
+  // تنسيق النص المراد مشاركته بشكل مرتب وسلس
+  const shareText = `\n« ${hadith.hadith} »\n\nالراوي: ${hadith.rawi}\nالمصدر: ${hadith.book}\nخلاصة حكم المحدث: ${hadith.hokm}\n\nتمت المشاركة من تطبيق بصيرة 🌟`;
+
+  // 1. استخدام ميزة المشاركة الرسمية للنظام إن وجدت
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'حديث شريف من تطبيق بصيرة',
+        text: shareText,
+        url: window.location.href
+      });
+    } catch (error) {
+      console.log('تم إلغاء المشاركة أو حدث خطأ:', error);
+    }
+  } else {
+    // 2. حل بديل: نسخ النص للحافظة إذا كان المتصفح لا يدعم المشاركة
+    try {
+      await navigator.clipboard.writeText(shareText);
+      alert('المتصفح لا يدعم المشاركة المباشرة، تم نسخ نص الحديث كاملاً بنجاح لمشاركته يدوياً! 📋');
+    } catch (err) {
+      console.error('فشل عملية النسخ:', err);
+    }
+  }
+};
   return (
     <div className="min-h-screen bg-[#060f0d] bg-radial-gradient text-zinc-100 flex flex-col items-center justify-center p-4 overflow-x-hidden relative select-none">
       {/* تأثيرات إضاءة خلفية خفيفة */}
@@ -95,15 +123,20 @@ export default function BaseerahPage() {
               </div>
             </div>
             <div className="space-y-4">
-              <h1 className="text-5xl pb-4 font-extrabold text-transparent bg-clip-text bg-linear-to-b from-emerald-300 via-emerald-400 to-emerald-600 font-serif">
+              <h1 
+              style={{fontFamily: 'IBM Plex Sans Arabic'}}
+              className="text-5xl pb-4 font-bold text-transparent bg-clip-text bg-linear-to-b from-emerald-300 via-emerald-400 to-emerald-600 font-[IBM Plex Arabic]">
                 بصيرة
               </h1>
-              <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
+              <p 
+              style={{fontFamily: 'IBM Plex Sans Arabic'}}
+              className="text-zinc-400 text-sm sm:text-base leading-loose">
                 نافذتك الرقمية الميسرة لتصفح وقراءة الأحاديث النبوية الشريفة من
                 مصادرها المعتمدة بأسلوب عصري.
               </p>
             </div>
             <button
+              style={{fontFamily:"IBM Plex Sans Arabic"}}
               onClick={() => setStep("book-select")}
               className="w-full sm:w-auto px-10 py-4 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl font-medium transition-all shadow-lg shadow-emerald-950/50 active:scale-[0.98]"
             >
@@ -122,10 +155,14 @@ export default function BaseerahPage() {
             className="w-full max-w-xl px-2 space-y-6 z-10"
           >
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-emerald-300 font-serif">
+              <h2 
+              style={{fontFamily:"IBM Plex Sans Arabic"}}
+              className="text-2xl font-bold text-emerald-300 font-serif">
                 اختر الموسوعة أو الكتاب
               </h2>
-              <p className="text-xs text-zinc-400">
+              <p 
+              style={{fontFamily:"IBM Plex Sans Arabic"}}
+              className="text-xs text-zinc-400">
                 حدد المصدر المفضل لبدء عرض الأحاديث الشريفة منه
               </p>
             </div>
@@ -138,10 +175,14 @@ export default function BaseerahPage() {
                   onClick={() => handleBookSelect(book.id)}
                   className="w-full p-4 bg-zinc-900/40 border border-zinc-800 hover:border-emerald-700/40 hover:bg-zinc-900/80 rounded-xl text-right transition-all group flex flex-col space-y-1 active:scale-[0.99]"
                 >
-                  <span className="group-hover:text-emerald-400 text-base font-semibold transition-colors font-serif">
+                  <span 
+                  style={{fontFamily:"IBM Plex Sans Arabic"}}
+                  className="group-hover:text-emerald-400 text-base font-semibold transition-colors font-serif">
                     {book.name}
                   </span>
-                  <span className="text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                  <span
+                  style={{fontFamily:"IBM Plex Sans Arabic"}}
+                   className="text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
                     {book.desc}
                   </span>
                 </button>
@@ -175,7 +216,7 @@ export default function BaseerahPage() {
                 </span>
                 <button
                   onClick={() => setStep("book-select")}
-                  className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
+                  className="text-xs bg-zinc-950/60 px-3 py-1.5 border border-zinc-800/60 rounded-lg text-zinc-100 hover:text-emerald-400 transition-colors flex items-center gap-1"
                 >
                   تغيير الكتاب
                 </button>
@@ -191,11 +232,17 @@ export default function BaseerahPage() {
                     </p>
                   </div>
                 ) : hadith ? (
-                  <p className="text-lg sm:text-xl font-serif text-zinc-100 text-center leading-relaxed font-medium">
-                    {hadith.hadith}
+                  <p 
+                  style={{fontFamily: "Amiri Quran"}}
+                  className="text-lg sm:text-xl font-serif text-zinc-100 text-center leading-loose font-bold">
+                    <span 
+                    style={{fontFamily: "IBM Plex Sans Arabic"}}
+                    className="text-emerald-300">{hadith.hadith}</span>
                   </p>
                 ) : (
-                  <p className="text-sm text-red-400">
+                  <p 
+                  style={{fontFamily: "IBM Plex Sans Arabic"}}
+                  className="text-sm text-red-400">
                     فشل في جلب الحديث، جرب التحديث مرة أخرى.
                   </p>
                 )}
@@ -204,27 +251,33 @@ export default function BaseerahPage() {
               {/* تذييل الكرت (الراوي والمحدث) */}
               {hadith && !loading && (
                 <div className="mt-6 pt-4 border-t border-zinc-800/60 bg-zinc-950/20 rounded-xl p-3 grid grid-cols-2 gap-2 text-xs text-zinc-400">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span>
+                    <span style={{fontFamily: "IBM Plex Sans Arabic"}}>
                       الراوي:{" "}
-                      <strong className="text-zinc-300">{hadith.rawi}</strong>
+                      <strong
+                      style={{fontFamily: "IBM Plex Sans Arabic"}}
+                       className="text-zinc-300">{hadith.rawi}</strong>
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 justify-end">
                     <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    <span>
+                    <span style={{fontFamily: "IBM Plex Sans Arabic"}}>
                       المحدث:{" "}
-                      <strong className="text-zinc-300">
+                      <strong
+                      style={{fontFamily: "IBM Plex Sans Arabic"}}
+                       className="text-zinc-300">
                         {hadith.mohdith}
                       </strong>
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 col-span-2">
+                  <div className="flex items-center gap-1.5 justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
-                    <span>
+                    <span style={{fontFamily: "IBM Plex Sans Arabic"}}>
                       خلاصة الحكم:{" "}
-                      <strong className="text-emerald-400">
+                      <strong
+                      style={{fontFamily: "IBM Plex Sans Arabic"}}
+                       className="text-emerald-400">
                         {hadith.hokm}
                       </strong>
                     </span>
@@ -245,6 +298,7 @@ export default function BaseerahPage() {
               </button>
 
               <button
+                onClick={handleShare}
                 disabled={loading || !hadith}
                 className="p-3 bg-zinc-900/40 hover:bg-zinc-900/80 border border-zinc-800 hover:border-zinc-700 active:scale-[0.97] transition-all rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-medium"
               >
