@@ -1,65 +1,271 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  BookOpen,
+  RefreshCw,
+  Copy,
+  Share2,
+  ChevronLeft,
+} from "lucide-react";
+import { hadithApi, HadithData } from "@/utils/hadithApi";
+
+export default function BaseerahPage() {
+  // 1. حالات التحكم بالمراحل والبيانات (States)
+  const [step, setStep] = useState<"welcome" | "book-select" | "hadith-view">(
+    "welcome",
+  );
+  const [selectedBook, setSelectedBook] = useState<string>("all");
+  const [hadith, setHadith] = useState<HadithData | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+
+  // مصفوفة الكتب المتاحة للفلترة
+  const books = [
+    { id: "all", name: "جميع الأحاديث", desc: "تصفح عشوائي من كافة الكتب" },
+    {
+      id: "صحيح البخاري",
+      name: "صحيح البخاري",
+      desc: "للإمام محمد بن إسماعيل البخاري",
+    },
+    {
+      id: "صحيح مسلم",
+      name: "صحيح مسلم",
+      desc: "للإمام مسلم بن الحجاج النيسابوري",
+    },
+    {
+      id: "الأربعون النووية",
+      name: "الأربعون النووية",
+      desc: "٤٢ حديثاً جامعاً في أصول الدين",
+    },
+    {
+      id: "رياض الصالحين",
+      name: "رياض الصالحين",
+      desc: "من كلام سيد المرسلين للإمام النووي",
+    },
+    { id: "سنن الترمذي", name: "سنن الترمذي", desc: "من كتاب سنن الترمذي" },
+  ];
+
+  // 2. دالة جلب الحديث عند الانتقال أو التحديث
+  const loadHadith = async (bookId: string) => {
+    setLoading(true);
+    const data = await hadithApi.getHadithByBook(bookId);
+    if (data) {
+      setHadith(data);
+    }
+    setLoading(false);
+  };
+
+  // عند اختيار كتاب، ننتقل للمرحلة الثالثة ونجلب أول حديث
+  const handleBookSelect = (bookId: string) => {
+    setSelectedBook(bookId);
+    setStep("hadith-view");
+    loadHadith(bookId);
+  };
+
+  // دالة نسخ نص الحديث
+  const handleCopy = () => {
+    if (!hadith) return;
+    const textToCopy = `"${hadith.hadith}"\n\nالراوي: ${hadith.rawi}\nالمحدث: ${hadith.mohdith}\nالكتاب: ${hadith.book}\nحكم المحدث: ${hadith.hokm}\n\n- عبر تطبيق بصيرة`;
+    navigator.clipboard.writeText(textToCopy);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="min-h-screen bg-[#060f0d] bg-radial-gradient text-zinc-100 flex flex-col items-center justify-center p-4 overflow-x-hidden relative select-none">
+      {/* تأثيرات إضاءة خلفية خفيفة */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-900/10 rounded-full blur-[120px] pointer-events-none" />
+
+      <AnimatePresence mode="wait">
+        {/* ==================== 1. الشاشة الترحيبية ==================== */}
+        {step === "welcome" && (
+          <motion.div
+            key="welcome"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4 }}
+            className="text-center max-w-md px-4 space-y-8 z-10"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <div className="flex justify-center">
+              <div className="w-20 h-20 bg-emerald-950/40 border border-emerald-500/20 rounded-full flex items-center justify-center shadow-inner">
+                <BookOpen className="w-10 h-10 text-emerald-400 animate-pulse" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h1 className="text-5xl pb-4 font-extrabold text-transparent bg-clip-text bg-linear-to-b from-emerald-300 via-emerald-400 to-emerald-600 font-serif">
+                بصيرة
+              </h1>
+              <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                نافذتك الرقمية الميسرة لتصفح وقراءة الأحاديث النبوية الشريفة من
+                مصادرها المعتمدة بأسلوب عصري.
+              </p>
+            </div>
+            <button
+              onClick={() => setStep("book-select")}
+              className="w-full sm:w-auto px-10 py-4 bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl font-medium transition-all shadow-lg shadow-emerald-950/50 active:scale-[0.98]"
+            >
+              ابدأ الرحلة
+            </button>
+          </motion.div>
+        )}
+
+        {/* ==================== 2. شاشة اختيار الكتب ==================== */}
+        {step === "book-select" && (
+          <motion.div
+            key="book-select"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            className="w-full max-w-xl px-2 space-y-6 z-10"
           >
-            Documentation
-          </a>
-        </div>
-      </main>
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold text-emerald-300 font-serif">
+                اختر الموسوعة أو الكتاب
+              </h2>
+              <p className="text-xs text-zinc-400">
+                حدد المصدر المفضل لبدء عرض الأحاديث الشريفة منه
+              </p>
+            </div>
+
+            {/* ابحث عن هذا الديف وضف عليه الفئات الثلاثة الأخيرة */}
+            <div className="grid grid-cols-1 gap-3 max-h-[60vh] overflow-y-auto pr-1 scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
+              {books.map((book) => (
+                <button
+                  key={book.id}
+                  onClick={() => handleBookSelect(book.id)}
+                  className="w-full p-4 bg-zinc-900/40 border border-zinc-800 hover:border-emerald-700/40 hover:bg-zinc-900/80 rounded-xl text-right transition-all group flex flex-col space-y-1 active:scale-[0.99]"
+                >
+                  <span className="group-hover:text-emerald-400 text-base font-semibold transition-colors font-serif">
+                    {book.name}
+                  </span>
+                  <span className="text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                    {book.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setStep("welcome")}
+              className="text-xs text-zinc-500 hover:text-emerald-400 flex items-center gap-1 mx-auto transition-colors"
+            >
+              <ChevronLeft className="w-3 h-3 rotate-180" /> العودة للرئيسية
+            </button>
+          </motion.div>
+        )}
+
+        {/* ==================== 3. شاشة عرض الأحاديث ==================== */}
+        {step === "hadith-view" && (
+          <motion.div
+            key="hadith-view"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="w-full max-w-2xl px-2 md:px-4 z-10 flex flex-col space-y-4"
+          >
+            {/* الكرت الزجاجي الفخم المطور */}
+            <div className="relative overflow-hidden bg-linear-to-b from-zinc-900/85 to-zinc-900/60 backdrop-blur-xl border border-emerald-900/40 rounded-2xl shadow-2xl p-6 sm:p-8 flex flex-col justify-between min-h-75">
+              {/* ترويسة الكرت */}
+              <div className="flex justify-between items-center border-b border-zinc-800/60 pb-3 mb-4">
+                <span className="text-xs font-serif bg-emerald-950/60 text-emerald-400 px-3 py-1.5 border border-emerald-800/30 rounded-lg">
+                  {books.find((b) => b.id === selectedBook)?.name}
+                </span>
+                <button
+                  onClick={() => setStep("book-select")}
+                  className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
+                >
+                  تغيير الكتاب
+                </button>
+              </div>
+
+              {/* متن الحديث */}
+              <div className="grow flex items-center justify-center py-4">
+                {loading ? (
+                  <div className="flex flex-col items-center space-y-3">
+                    <RefreshCw className="w-6 h-6 text-emerald-400 animate-spin" />
+                    <p className="text-xs text-zinc-500">
+                      جاري البحث في الموسوعة...
+                    </p>
+                  </div>
+                ) : hadith ? (
+                  <p className="text-lg sm:text-xl font-serif text-zinc-100 text-center leading-relaxed font-medium">
+                    {hadith.hadith}
+                  </p>
+                ) : (
+                  <p className="text-sm text-red-400">
+                    فشل في جلب الحديث، جرب التحديث مرة أخرى.
+                  </p>
+                )}
+              </div>
+
+              {/* تذييل الكرت (الراوي والمحدث) */}
+              {hadith && !loading && (
+                <div className="mt-6 pt-4 border-t border-zinc-800/60 bg-zinc-950/20 rounded-xl p-3 grid grid-cols-2 gap-2 text-xs text-zinc-400">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span>
+                      الراوي:{" "}
+                      <strong className="text-zinc-300">{hadith.rawi}</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span>
+                      المحدث:{" "}
+                      <strong className="text-zinc-300">
+                        {hadith.mohdith}
+                      </strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 col-span-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+                    <span>
+                      خلاصة الحكم:{" "}
+                      <strong className="text-emerald-400">
+                        {hadith.hokm}
+                      </strong>
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* أزرار التحكم والعمليات التفاعلية (Responsive Grid) */}
+            <div className="grid grid-cols-3 gap-2 w-full">
+              <button
+                onClick={handleCopy}
+                disabled={loading || !hadith}
+                className="p-3 bg-zinc-900/40 hover:bg-zinc-900/80 border border-zinc-800 hover:border-zinc-700 active:scale-[0.97] transition-all rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-medium"
+              >
+                <Copy className="w-4 h-4 text-zinc-400" />
+                <span>{copied ? "تم النسخ!" : "نسخ"}</span>
+              </button>
+
+              <button
+                disabled={loading || !hadith}
+                className="p-3 bg-zinc-900/40 hover:bg-zinc-900/80 border border-zinc-800 hover:border-zinc-700 active:scale-[0.97] transition-all rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-medium"
+              >
+                <Share2 className="w-4 h-4 text-zinc-400" />
+                <span>مشاركة</span>
+              </button>
+
+              <button
+                onClick={() => loadHadith(selectedBook)}
+                disabled={loading}
+                className="p-3 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.97] transition-all rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-medium text-white shadow-lg shadow-emerald-950/40"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                />
+                <span>حديث آخر</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
