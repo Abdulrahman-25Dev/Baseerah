@@ -85,13 +85,13 @@ export default function BaseerahPage() {
     if (!hadith) return;
 
     // تنسيق النص المراد مشاركته بشكل مرتب وسلس
-    const shareText = `\n« ${hadith.hadith} »\n\nالراوي: ${hadith.rawi}\nالمصدر: ${hadith.book}\nخلاصة حكم المحدث: ${hadith.hokm}\n\nتمت المشاركة من تطبيق بصيرة 🌟`;
+    const shareText = `\n« ${hadith.hadith} »\n\nالراوي: ${hadith.rawi}\nالمصدر: ${hadith.book}\nخلاصة حكم المحدث: ${hadith.hokm}\n\nتمت المشاركة من موقع بصيرة 🌟`;
 
     // 1. استخدام ميزة المشاركة الرسمية للنظام إن وجدت
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "حديث شريف من تطبيق بصيرة",
+          title: "حديث شريف من موقع بصيرة",
           text: shareText,
           url: window.location.href,
         });
