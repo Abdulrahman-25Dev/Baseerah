@@ -16,11 +16,11 @@ export const metadata: Metadata = {
   title: "بصيرة | Baseerah",
   description:
     "مساحتك اليومية لقراءة الأحاديث النبوية الصحيحة، وفهم معانيها، والعمل بها.",
-    icons:{
-      icon: "/baseerahIcon.png",
-      shortcut: "/baseerahIcon.ico",
-      apple: "/baseerahIcon.png",
-    }
+  icons: {
+    icon: "/baseerahIcon.png",
+    shortcut: "/baseerahIcon.ico",
+    apple: "/baseerahIcon.png",
+  },
 };
 
 export default function RootLayout({
@@ -34,9 +34,16 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
-<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&family=Lateef:wght@200;300;400;500;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet"/>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&family=Lateef:wght@200;300;400;500;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
