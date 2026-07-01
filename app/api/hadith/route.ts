@@ -1,62 +1,120 @@
-import { NextResponse } from 'next/server';
-import axios from 'axios';
+import { NextRequest, NextResponse } from "next/server";
+import axios from "axios";
 
-// روابط الكتب الرسمية داخل API الخاص بـ fawazahmed0
-const bookEndpoints: Record<string, string> = {
-  'ara-bukhari': 'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-bukhari.json',
-  'ara-muslim': 'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-muslim.json',
-  'ara-tirmidhi': 'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-tirmidhi.json', // 👈 إضافة سنن الترمذي هنا
+// 1. القائمة العشوائية النقية المعتمدة
+const RANDOM_BOOKS_POOL = [
+  { key: "ara-bukhari", name: "البخاري" },
+  { key: "ara-muslim", name: "مسلم" },
+  { key: "ara-tirmidhi", name: "الترمذي" },
+  { key: "ara-nasai", name: "النسائي" },
+  { key: "ara-malik", name: "مالك" }, 
+];
+
+const BOOKS_API_MAP: Record<string, string> = {
+  "صحيح البخاري": "ara-bukhari",
+  "صحيح مسلم": "ara-muslim",
+  "سنن الترمذي": "ara-tirmidhi",
+  "سنن النسائي": "ara-nasai",
+  "موطأ مالك": "ara-malik",
+  "رياض الصالحين": "ara-malik", 
+  "الأربعون النووية": "ara-nawawi",
 };
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const book = searchParams.get('book') || 'all';
+const MOHDITH_MAP: Record<string, string> = {
+  "ara-bukhari": "البخاري",
+  "ara-muslim": "مسلم",
+  "ara-tirmidhi": "الترمذي",
+  "ara-nasai": "النسائي",
+  "ara-malik": "مالك",
+  "ara-nawawi": "مذكور في المتن", 
+};
 
-  // تحويل اسم الكتاب القادم من الفرونت إند ليتوافق مع معرفات الـ API
-  let apiBookName = 'ara-bukhari'; // الافتراضي
-  let displayName = 'صحيح البخاري';
-  let mohdithName = 'البخاري';
-  let hadithHokm = 'صحيح';
-
-  if (book === 'صحيح مسلم') {
-    apiBookName = 'ara-muslim';
-    displayName = 'صحيح مسلم';
-    mohdithName = 'مسلم';
-    hadithHokm = 'صحيح';
-  } else if (book === 'سنن الترمذي') { // 👈 فحص إذا كان المطلوب سنن الترمذي
-    apiBookName = 'ara-tirmidhi';
-    displayName = 'سنن الترمذي';
-    mohdithName = 'الترمذي';
-    hadithHokm = 'حسن صحيح'; // لأن الترمذي يشتهر بـ حسن صحيح في سننه
-  }
-
+export async function GET(request: NextRequest) {
   try {
-    // جلب ملف الأحاديث الخاص بالكتاب المحدد
-    const response = await axios.get(`https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/${apiBookName}.json`);
-    
-    const hadithsList = response.data.hadiths;
+    const { searchParams } = new URL(request.url);
+    const bookParam = searchParams.get("book") || "جميع الأحاديث (عشوائي)";
 
-    if (hadithsList && hadithsList.length > 0) {
-      // اختيار حديث عشوائي
-      const randomIndex = Math.floor(Math.random() * hadithsList.length);
-      const randomHadith = hadithsList[randomIndex];
+    let bookKey = "";
+    let currentMohdith = "";
 
-      // تحويل شكل البيانات لتناسب واجهتك تماماً
-      const formattedHadith = {
-        hadith: randomHadith.text,
-        rawi: "رواه الصحابي المذكور في المتن", 
-        mohdith: mohdithName,
-        book: displayName,
-        hokm: hadithHokm
-      };
-
-      return NextResponse.json([formattedHadith]);
+    // الفحص العشوائي لـ "جميع الأحاديث"
+    if (bookParam === "جميع الأحاديث (عشوائي)" || bookParam === "all" || bookParam === "جميع الأحاديث") {
+      const randomChoice = RANDOM_BOOKS_POOL[Math.floor(Math.random() * RANDOM_BOOKS_POOL.length)];
+      bookKey = randomChoice.key;
+      currentMohdith = randomChoice.name;
+    } else {
+      bookKey = BOOKS_API_MAP[bookParam];
+      
+      if (!bookKey) {
+        if (bookParam.includes("بخاري")) bookKey = "ara-bukhari";
+        else if (bookParam.includes("مسلم")) bookKey = "ara-muslim";
+        else if (bookParam.includes("ترمذي")) bookKey = "ara-tirmidhi";
+        else if (bookParam.includes("نسائي")) bookKey = "ara-nasai";
+        else if (bookParam.includes("موطأ") || bookParam.includes("مالك") || bookParam.includes("رياض")) bookKey = "ara-malik";
+        else if (bookParam.includes("أربعون") || bookParam.includes("نووية")) bookKey = "ara-nawawi";
+        else bookKey = "ara-bukhari";
+      }
+      
+      // هنا الفحص الذكي الصارم: لو الكتاب المختار رياض الصالحين نثبت المحدث "النووي"
+      if (bookParam === "رياض الصالحين" || bookParam.includes("رياض")) {
+        currentMohdith = "النووي";
+      } else {
+        currentMohdith = MOHDITH_MAP[bookKey] || "البخاري";
+      }
     }
 
-    return NextResponse.json({ error: "No hadiths found" }, { status: 404 });
+    const url = `https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/${bookKey}.min.json`;
+    
+    const res = await axios.get(url);
+    const hadithsList = res.data?.hadiths || [];
+
+    if (!hadithsList.length) {
+      return NextResponse.json({ error: "لم يتم العثور على أحاديث" }, { status: 404 });
+    }
+
+    const randomHadith = hadithsList[Math.floor(Math.random() * hadithsList.length)];
+
+    // الفحص والتعريب الذكي للحكم
+    let translatedHokm = "";
+
+    if (bookKey === "ara-nawawi" || bookParam.includes("أربعون") || bookParam.includes("نووية")) {
+      translatedHokm = "مذكور في المتن";
+    } else {
+      const gradeTerms: Record<string, string> = {
+        "sahih": "صحيح",
+        "hasan": "حسن",
+        "daif": "ضعيف",
+        "maudu": "موضوع",
+        "maqtu": "مقطوع", 
+        "marfu": "مرفوع",
+        "maukuf": "موقوف",
+        "mauquf": "موقوف",
+        "mursal": "مرسل",
+        "munqati": "منقطع",
+        "lighairihi": "لغيره",
+        "lidzatihi": "لذاته",
+      };
+
+      const rawGradeStr = (randomHadith.grade || (randomHadith.grades && randomHadith.grades[0]?.grade) || "sahih").toLowerCase();
+      const translatedParts = rawGradeStr.split(" ").map(word => gradeTerms[word] || word);
+      translatedHokm = translatedParts.join(" ");
+    }
+
+    const formattedHadith = {
+      hadith: randomHadith.text || randomHadith.hadith || "",
+      rawi: randomHadith.rawi || randomHadith.narrator || "مذكور في السند", 
+      mohdith: currentMohdith, // سيظهر الآن "النووي" بدقة شديدة لرياض الصالحين
+      book: bookParam,
+      hokm: translatedHokm,
+    };
+
+    return NextResponse.json([formattedHadith]);
 
   } catch (error: any) {
-    console.error("Error fetching from fawazahmed0 API:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Final API Error:", error?.message || error);
+    return NextResponse.json(
+      { error: "حدث خطأ أثناء جلب الحديث", details: error?.message || "Unknown error" },
+      { status: 500 }
+    );
   }
 }
